@@ -1,2 +1,2 @@
 # hello-world
-my first repository that is created for github
+This is created to test creating a new branch our of master and commit.
