@@ -1,13 +1,4 @@
-# application.yml
-management:
-  otlp:
-    metrics:
-      export:
-        url: https://your-dynatrace-url/api/v2/otlp/v1/metrics
-        headers:
-          Authorization: "Api-Token ${DT_API_TOKEN}"
-    tracing:
-      export:
-        url: https://your-dynatrace-url/api/v2/otlp/v1/traces
-        headers:
-          Authorization: "Api-Token ${DT_API_TOKEN}"
+# Query Dynatrace API for your service (replace with your credentials)
+curl -X GET \
+  "https://your-dynatrace-env.live.dynatrace.com/api/v2/entities?entitySelector=type(SERVICE),entityName.equals('YOUR_SERVICE_NAME')" \
+  -H "Authorization: Api-Token $DT_API_TOKEN"
