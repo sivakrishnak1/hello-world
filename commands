@@ -2,3 +2,17 @@
 curl -X GET \
   "https://your-dynatrace-env.live.dynatrace.com/api/v2/entities?entitySelector=type(SERVICE),entityName.equals('YOUR_SERVICE_NAME')" \
   -H "Authorization: Api-Token $DT_API_TOKEN"
+
+====local
+api-token: dt0c01.6QLF7PO2ZGUMYUZNVDR4QSHE.E4DG3QYP7EF5NFT2QOPHDZ2IOLPZY7BBC6T7FPY6BNCRFKOITXH7VUZ6VJT2XAQO
+        uri: https://xmz83804.live.dynatrace.com/api/v2/metrics/ingest
+
+
+
+curl -X GET \
+  "https://xmz83804.live.dynatrace.com/api/v2/entities?entitySelector=type(SERVICE),entityName.equals('YOUR_SERVICE_NAME')" \
+  -H "Authorization: Api-Token dt0c01.6QLF7PO2ZGUMYUZNVDR4QSHE.E4DG3QYP7EF5NFT2QOPHDZ2IOLPZY7BBC6T7FPY6BNCRFKOITXH7VUZ6VJT2XAQO"
+
+
+===working
+dt0c01.UC65A6MK2JATYUZVYDF5T7CI.4R6VSITMRN4EDHDZLRQ536TSGAVRWACC5RLFUS24Y4BZULXCXAHOXD5MHT2K24UL
