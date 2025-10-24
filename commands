@@ -1,0 +1,13 @@
+# application.yml
+management:
+  otlp:
+    metrics:
+      export:
+        url: https://your-dynatrace-url/api/v2/otlp/v1/metrics
+        headers:
+          Authorization: "Api-Token ${DT_API_TOKEN}"
+    tracing:
+      export:
+        url: https://your-dynatrace-url/api/v2/otlp/v1/traces
+        headers:
+          Authorization: "Api-Token ${DT_API_TOKEN}"
