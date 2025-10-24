@@ -2,97 +2,95 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
-                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     
-    <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.0</version>
-        <relativePath/>
-    </parent>
-    
     <groupId>com.example</groupId>
-    <artifactId>commercetools-opentelemetry</artifactId>
+    <artifactId>opentelemetry-demo</artifactId>
     <version>1.0.0</version>
     
     <properties>
-        <java.version>17</java.version>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        
+        <!-- OpenTelemetry Versions -->
         <opentelemetry.version>1.32.0</opentelemetry.version>
-        <commercetools.version>13.1.0</commercetools.version>
+        <opentelemetry.spring.boot.starter.version>2.0.0</opentelemetry.spring.boot.starter.version>
+        
+        <!-- Spring Boot Version -->
+        <spring-boot.version>3.1.0</spring-boot.version>
     </properties>
     
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+    
     <dependencies>
-        <!-- Spring Boot Starters -->
+        <!-- Spring Boot Starter -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <artifactId>spring-boot-starter</artifactId>
         </dependency>
+        
+        <!-- OpenTelemetry Spring Boot Starter -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
+            <groupId>io.opentelemetry.instrumentation</groupId>
+            <artifactId>opentelemetry-spring-boot-starter</artifactId>
+            <version>${opentelemetry.spring.boot.starter.version}</version>
         </dependency>
-
-        <!-- OpenTelemetry -->
+        
+        <!-- OpenTelemetry API -->
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-api</artifactId>
             <version>${opentelemetry.version}</version>
         </dependency>
+        
+        <!-- OpenTelemetry SDK -->
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk</artifactId>
             <version>${opentelemetry.version}</version>
         </dependency>
+        
+        <!-- OpenTelemetry SDK Extension for Autoconfigure -->
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
+            <version>${opentelemetry.version}</version>
+        </dependency>
+        
+        <!-- OpenTelemetry Semantic Conventions (contains ResourceAttributes) -->
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-semconv</artifactId>
+            <version>1.23.1-alpha</version>
+        </dependency>
+        
+        <!-- OpenTelemetry Exporter for Logging (optional) -->
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-logging</artifactId>
+            <version>${opentelemetry.version}</version>
+        </dependency>
+        
+        <!-- OpenTelemetry Exporter for OTLP (optional) -->
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-otlp</artifactId>
             <version>${opentelemetry.version}</version>
         </dependency>
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-semconv</artifactId>
-            <version>1.32.0</version>
-        </dependency>
-
-        <!-- commercetools SDK with OpenTelemetry -->
-        <dependency>
-            <groupId>com.commercetools.sdk</groupId>
-            <artifactId>commercetools-okhttp-client4</artifactId>
-            <version>${commercetools.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.commercetools.sdk</groupId>
-            <artifactId>commercetools-sdk-java-api</artifactId>
-            <version>${commercetools.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.commercetools</groupId>
-            <artifactId>commercetools-http-okhttp3</artifactId>
-            <version>2.2.1</version>
-        </dependency>
-
-        <!-- OpenTelemetry Instrumentation for commercetools -->
-        <dependency>
-            <groupId>com.commercetools.sdk</groupId>
-            <artifactId>commercetools-opentelemetry</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-
-        <!-- OkHttp for commercetools -->
-        <dependency>
-            <groupId>com.squareup.okhttp3</groupId>
-            <artifactId>okhttp</artifactId>
-            <version>4.12.0</version>
-        </dependency>
-
-        <!-- JSON -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-        </dependency>
     </dependencies>
-
+    
     <build>
         <plugins>
             <plugin>
