@@ -1,0 +1,61 @@
+package com.otle.ctotledemo.controller;
+
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.Tracer;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@RestController
+public class DiagnosticController {
+
+    private final Tracer tracer;
+
+    public DiagnosticController() {
+        this.tracer = GlobalOpenTelemetry.getTracer("diagnostic");
+    }
+
+    @GetMapping("/diagnostic/otel")
+    public Map<String, Object> getOtelStatus() {
+        Map<String, Object> status = new HashMap<>();
+        status.put("otelInitialized", GlobalOpenTelemetry.get() != null);
+        status.put("serviceName", System.getProperty("otel.service.name"));
+        status.put("endpoint", System.getProperty("otel.exporter.otlp.endpoint"));
+        status.put("tracerAvailable", tracer != null);
+        return status;
+    }
+
+    @GetMapping("/test-trace")
+    public String testTrace() {
+        Span span = tracer.spanBuilder("test-request").startSpan();
+        try {
+            span.setAttribute("http.method", "GET");
+            span.setAttribute("http.route", "/test-trace");
+            span.setAttribute("custom.attribute", "test-value");
+            // Simulate work
+            Thread.sleep(100);
+            return "Test trace created - check Dynatrace!";
+        } catch (InterruptedException e) {
+            span.recordException(e);
+            Thread.currentThread().interrupt();
+            return "Error occurred";
+        } finally {
+            span.end();
+        }
+    }
+
+    @GetMapping("/hello")
+    public String hello() {
+        Span span = tracer.spanBuilder("hello-endpoint").startSpan();
+        try {
+            span.setAttribute("http.method", "GET");
+            span.setAttribute("http.route", "/hello");
+            return "Hello from Spring Boot with OpenTelemetry!";
+        } finally {
+            span.end();
+        }
+    }
+}
