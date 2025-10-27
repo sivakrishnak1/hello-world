@@ -1,18 +1,5 @@
-# Query Dynatrace API for your service (replace with your credentials)
-curl -X GET \
-  "https://your-dynatrace-env.live.dynatrace.com/api/v2/entities?entitySelector=type(SERVICE),entityName.equals('YOUR_SERVICE_NAME')" \
-  -H "Authorization: Api-Token $DT_API_TOKEN"
+==env
+OTEL_EXPORTER_OTLP_ENDPOINT=https://xmz83804.live.dynatrace.com/api/v2/otlp;OTEL_EXPORTER_OTLP_HEADERS=Authorization=Api-Token dt0c01.RN3RXG5KBFTZ5XPOECY27EWU.FL2EFZRWX6XMGULOZJZT3ES272W2DRSHJZUHX55HKV6L65YO5URWVT2COMZCIKMB;OTEL_SERVICE_NAME=skk-service
 
-====local
-api-token: dt0c01.6QLF7PO2ZGUMYUZNVDR4QSHE.E4DG3QYP7EF5NFT2QOPHDZ2IOLPZY7BBC6T7FPY6BNCRFKOITXH7VUZ6VJT2XAQO
-        uri: https://xmz83804.live.dynatrace.com/api/v2/metrics/ingest
-
-
-
-curl -X GET \
-  "https://xmz83804.live.dynatrace.com/api/v2/entities?entitySelector=type(SERVICE),entityName.equals('YOUR_SERVICE_NAME')" \
-  -H "Authorization: Api-Token dt0c01.6QLF7PO2ZGUMYUZNVDR4QSHE.E4DG3QYP7EF5NFT2QOPHDZ2IOLPZY7BBC6T7FPY6BNCRFKOITXH7VUZ6VJT2XAQO"
-
-
-===working
-dt0c01.UC65A6MK2JATYUZVYDF5T7CI.4R6VSITMRN4EDHDZLRQ536TSGAVRWACC5RLFUS24Y4BZULXCXAHOXD5MHT2K24UL
+==program arguments
+-Dotel.java.global-autoconfigure.enabled=true -Dotel.exporter.otlp.protocol=http/protobuf
