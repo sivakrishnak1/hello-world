@@ -1,8 +1,15 @@
 package com.otle.ctotledemo.controller;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Scope;
+import io.opentelemetry.sdk.autoconfigure.AutoConfiguredOpenTelemetrySdk;
+import io.opentelemetry.sdk.resources.Resource;
+import io.opentelemetry.sdk.trace.SdkTracerProvider;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -14,6 +21,9 @@ public class DiagnosticController {
 
     private final Tracer tracer;
 
+    @Autowired
+    private Environment environment;
+
     public DiagnosticController() {
         this.tracer = GlobalOpenTelemetry.getTracer("diagnostic");
     }
@@ -22,8 +32,8 @@ public class DiagnosticController {
     public Map<String, Object> getOtelStatus() {
         Map<String, Object> status = new HashMap<>();
         status.put("otelInitialized", GlobalOpenTelemetry.get() != null);
-        status.put("serviceName", System.getProperty("otel.service.name"));
-        status.put("endpoint", System.getProperty("otel.exporter.otlp.endpoint"));
+        status.put("serviceName", environment.getProperty("otel.service.name"));
+        status.put("endpoint", environment.getProperty("otel.exporter.otlp.endpoint"));
         status.put("tracerAvailable", tracer != null);
         return status;
     }
@@ -47,15 +57,249 @@ public class DiagnosticController {
         }
     }
 
-    @GetMapping("/hello")
-    public String hello() {
-        Span span = tracer.spanBuilder("hello-endpoint").startSpan();
+    @GetMapping("/otel-config-details")
+    public Map<String, Object> getOtelConfigDetails() {
+        Map<String, Object> config = new HashMap<>();
+
+        // 1. Check what configuration OpenTelemetry is using
         try {
+            // Get the auto-configured SDK
+            //AutoConfiguredOpenTelemetrySdk autoOtel = AutoConfiguredOpenTelemetrySdk.get();
+            //config.put("autoConfiguredSdkAvailable", autoOtel != null);
+
+           // if (autoOtel != null) {
+                // Get resource information
+               // Resource resource = autoOtel.getResource();
+               // config.put("serviceName", resource.getAttribute("service.name"));
+               // config.put("resourceAttributes", resource.getAttributes().asMap());
+
+                // Get tracer provider
+//                SdkTracerProvider tracerProvider = autoOtel.getOpenTelemetrySdk()
+//                        .getSdkTracerProvider();
+//                config.put("tracerProviderAvailable", tracerProvider != null);
+           // }
+        } catch (Exception e) {
+            config.put("autoConfigError", e.getMessage());
+        }
+
+        // 2. Check current span context
+        Span currentSpan = Span.current();
+        config.put("currentSpanValid", currentSpan.getSpanContext().isValid());
+        config.put("currentTraceId", currentSpan.getSpanContext().getTraceId());
+        config.put("currentSpanId", currentSpan.getSpanContext().getSpanId());
+
+        return config;
+    }
+
+    @GetMapping("/otel-public-diagnostic")
+    public Map<String, Object> otelPublicDiagnostic() {
+        Map<String, Object> diagnostic = new HashMap<>();
+
+        // 1. Check GlobalOpenTelemetry availability
+        boolean otelAvailable = GlobalOpenTelemetry.get() != null;
+        diagnostic.put("globalOtelAvailable", otelAvailable);
+
+        if (otelAvailable) {
+            // 2. Test if it's real SDK or no-op by creating a span
+            Tracer tracer = GlobalOpenTelemetry.getTracer("public-diagnostic");
+            Span testSpan = tracer.spanBuilder("sdk-type-test").startSpan();
+
+            String traceId = testSpan.getSpanContext().getTraceId();
+            String spanId = testSpan.getSpanContext().getSpanId();
+            boolean traceIdValid = testSpan.getSpanContext().isValid();
+            boolean isRemote = testSpan.getSpanContext().isRemote();
+
+            testSpan.end();
+
+            diagnostic.put("testTraceId", traceId);
+            diagnostic.put("testSpanId", spanId);
+            diagnostic.put("testSpanValid", traceIdValid);
+            diagnostic.put("testSpanRemote", isRemote);
+
+            // Check if it's no-op (all zeros trace ID)
+            boolean isNoop = traceId.equals("00000000000000000000000000000000");
+            diagnostic.put("sdkType", isNoop ? "NO-OP" : "REAL-SDK");
+            diagnostic.put("isNoop", isNoop);
+        }
+
+        // 3. Check current auto-instrumentation span
+        Span currentSpan = Span.current();
+        diagnostic.put("currentSpanValid", currentSpan.getSpanContext().isValid());
+        diagnostic.put("currentTraceId", currentSpan.getSpanContext().getTraceId());
+        diagnostic.put("currentSpanId", currentSpan.getSpanContext().getSpanId());
+        diagnostic.put("currentSpanSampled", currentSpan.getSpanContext().isSampled());
+
+        // 4. Check configuration from Spring Environment
+        diagnostic.put("envOtelServiceName", environment.getProperty("otel.service.name"));
+        diagnostic.put("envOtelEndpoint", environment.getProperty("otel.exporter.otlp.endpoint"));
+        diagnostic.put("envOtelHeadersConfigured", environment.getProperty("otel.exporter.otlp.headers") != null);
+        diagnostic.put("envOtelTracesExporter", environment.getProperty("otel.traces.exporter"));
+        diagnostic.put("envSpringAppName", environment.getProperty("spring.application.name"));
+
+        return diagnostic;
+    }
+
+    @GetMapping("/comprehensive-trace-test")
+    public String comprehensiveTraceTest() {
+        Tracer tracer = GlobalOpenTelemetry.getTracer(environment.getProperty("otel.service.name"));
+
+        Span span = tracer.spanBuilder("comprehensive-test-span")
+                .startSpan();
+
+        try (Scope scope = span.makeCurrent()) {
+            // Add comprehensive attributes
+            span.setAttribute("test.category", "comprehensive");
+            span.setAttribute("test.timestamp", System.currentTimeMillis());
+            span.setAttribute("service.name.env", environment.getProperty("otel.service.name"));
+            span.setAttribute("endpoint.env", environment.getProperty("otel.exporter.otlp.endpoint"));
             span.setAttribute("http.method", "GET");
-            span.setAttribute("http.route", "/hello");
-            return "Hello from Spring Boot with OpenTelemetry!";
+            span.setAttribute("http.route", "/comprehensive-trace-test");
+            span.setAttribute("span.kind", "server");
+            span.setAttribute("test.iteration", 1);
+
+            // Add multiple events
+            span.addEvent("test.phase.started",
+                    Attributes.of(
+                            io.opentelemetry.api.common.AttributeKey.stringKey("phase"), "initialization"
+                    ));
+
+            Thread.sleep(50);
+
+            span.addEvent("test.phase.processing",
+                    Attributes.of(
+                            io.opentelemetry.api.common.AttributeKey.longKey("processed.items"), 42L
+                    ));
+
+            Thread.sleep(50);
+
+            span.addEvent("test.phase.completed",
+                    Attributes.of(
+                            io.opentelemetry.api.common.AttributeKey.stringKey("status"), "success"
+                    ));
+
+            // Create child spans to test hierarchy
+            createDatabaseSpan(tracer);
+            createExternalCallSpan(tracer);
+
+            return String.format("""
+                            Comprehensive trace test completed!
+                            ==================================
+                            Trace ID: %s
+                            Service: %s
+                            Endpoint: %s
+                            Headers Configured: %s
+                                            
+                            Check Dynatrace for:
+                            - Span: comprehensive-test-span
+                            - Child spans: database-operation, external-api-call
+                            - Attributes: test.category=comprehensive
+                            """,
+                    span.getSpanContext().getTraceId(),
+                    environment.getProperty("otel.service.name", "unknown"),
+                    environment.getProperty("otel.exporter.otlp.endpoint", "not-set"),
+                    environment.getProperty("otel.exporter.otlp.headers") != null
+            );
+
+        } catch (InterruptedException e) {
+            span.recordException(e);
+            Thread.currentThread().interrupt();
+            return "Test interrupted";
         } finally {
             span.end();
         }
     }
+
+    private void createDatabaseSpan(Tracer tracer) throws InterruptedException {
+        Span dbSpan = tracer.spanBuilder("database-operation")
+                .startSpan();
+        try (Scope scope = dbSpan.makeCurrent()) {
+            dbSpan.setAttribute("db.system", "postgresql");
+            dbSpan.setAttribute("db.operation", "SELECT");
+            dbSpan.setAttribute("db.table", "users");
+            dbSpan.setAttribute("test.parent", "comprehensive-test-span");
+
+            Thread.sleep(25);
+            dbSpan.addEvent("db.query.executed");
+        } finally {
+            dbSpan.end();
+        }
+    }
+
+    private void createExternalCallSpan(Tracer tracer) throws InterruptedException {
+        Span apiSpan = tracer.spanBuilder("external-api-call")
+                .startSpan();
+        try (Scope scope = apiSpan.makeCurrent()) {
+            apiSpan.setAttribute("http.method", "GET");
+            apiSpan.setAttribute("http.url", "https://api.example.com/v1/data");
+            apiSpan.setAttribute("http.status_code", 200);
+            apiSpan.setAttribute("test.parent", "comprehensive-test-span");
+
+            Thread.sleep(35);
+            apiSpan.addEvent("api.call.completed");
+        } finally {
+            apiSpan.end();
+        }
+    }
+
+    @GetMapping("/trace-connectivity-test")
+    public Map<String, Object> traceConnectivityTest() {
+        Map<String, Object> result = new HashMap<>();
+
+        // Test 1: Basic span creation
+        Tracer tracer = GlobalOpenTelemetry.getTracer("connectivity-test");
+        Span span = tracer.spanBuilder("connectivity-check").startSpan();
+
+        try {
+            span.setAttribute("connectivity.test", "true");
+            span.setAttribute("test.run.id", System.currentTimeMillis());
+
+            result.put("spanCreation", "SUCCESS");
+            result.put("traceId", span.getSpanContext().getTraceId());
+            result.put("spanId", span.getSpanContext().getSpanId());
+            result.put("spanValid", span.getSpanContext().isValid());
+
+        } finally {
+            span.end();
+        }
+
+        // Test 2: Configuration status
+        result.put("serviceName", environment.getProperty("otel.service.name"));
+        result.put("endpoint", environment.getProperty("otel.exporter.otlp.endpoint"));
+        result.put("headersConfigured", environment.getProperty("otel.exporter.otlp.headers") != null);
+        result.put("tracesExporter", environment.getProperty("otel.traces.exporter"));
+
+        // Test 3: Current context
+        Span current = Span.current();
+        result.put("autoInstrumentationWorking", current.getSpanContext().isValid());
+
+        return result;
+    }
+
+
+
+
+    @GetMapping("/props-check")
+    public Map<String, Object> checkProperties() {
+        Map<String, Object> props = new HashMap<>();
+
+        // Check if Spring Boot is reading ANY properties
+        props.put("server.port", System.getProperty("server.port"));
+        props.put("spring.application.name", System.getProperty("spring.application.name"));
+
+        // Check OpenTelemetry properties specifically
+        String[] otelProps = {
+                "otel.service.name",
+                "otel.exporter.otlp.endpoint",
+                "otel.exporter.otlp.headers",
+                "otel.traces.exporter"
+        };
+
+        for (String prop : otelProps) {
+            String value = System.getProperty(prop);
+            props.put(prop, value != null ? value : "NULL");
+        }
+
+        return props;
+    }
+
 }
